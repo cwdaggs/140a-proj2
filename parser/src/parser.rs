@@ -11,6 +11,8 @@ pub struct Parser {
 
 impl Parser {
     // has a while loop calling get next token or whatever from scanner
+    
+
     pub fn program() {
         //if next token = void
         //main_declaration()

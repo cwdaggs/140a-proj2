@@ -4,8 +4,10 @@ use character_stream::*;
 mod token;
 use token::*;
 
+mod scanner;
+use scanner::*;
+
 use std::env;
-use std::fs;
 
 // Needs to take in .x source file
 fn main() {
@@ -18,16 +20,13 @@ fn main() {
 		panic!("Invalid file type");
 	}
 	
-	//Read file
-	// let file_contents = fs::read_to_string(filename).expect("Unable to read file");
-	// println!("{}", file_contents);
-	// let char_stream = CharStream::new(file_contents);
 	let mut char_stream = CharStream::new(filename);
 	println!("{}", char_stream.peek_next_char().unwrap());
-	println!("{}", char_stream.peek_ahead_char(0).unwrap());
-	println!("{}", char_stream.peek_ahead_char(1).unwrap());
-	println!("{}", char_stream.get_next_char().unwrap());
-	println!("{}", char_stream.peek_next_char().unwrap());
+	println!("{}", char_stream.peek_ahead_char(5).unwrap());
+	// println!("{}", char_stream.peek_ahead_char(1).unwrap());
+	// println!("{}", char_stream.get_next_char().unwrap());
+	// println!("{}", char_stream.peek_next_char().unwrap());
+	let scanner = Scanner::new(char_stream);
 
 
 
