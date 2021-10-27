@@ -3,7 +3,6 @@ use crate::Token;
 
 const KEYWORDS: [&'static str; 12] = ["unsigned", "char", "short", "int", "long", "float", "double", "while", "if", "return", "void", "main"];
 const OPERATORS: [char; 14] = ['(', ',', ')', '{', '}', '=', '<', '>', '+', '-', '*', '/', ';', '!']; //also ==, !=, <=, >=
-// const DIGITS: [char; 10] = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
 
 pub struct Scanner {
     stream: CharStream,
@@ -33,7 +32,7 @@ impl Scanner {
         }
     }
 
-    pub fn get_next_token(&self) -> Option<Token> {
+    pub fn get_next_token(&mut self) -> Option<Token> {
         if self.more_tokens_available() {
             let next_token = Some(self.tokens[0]);
 			self.tokens.remove(0);
