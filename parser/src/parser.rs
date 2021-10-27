@@ -4,6 +4,9 @@ use crate::token::TokenType;
 
 const INT_TYPES: [&'static str; 4] = ["char", "short", "int", "long"];
 const FLOAT_TYPES:  [&'static str; 2] = ["float", "double"]; 
+const RELATION_OPS: [&'static str; 6] = ["==", "<", ">", "<=", ">=", "!="];
+const ADD_OPS: [&'static str; 2] = ["+", "-"];
+const MULT_OPS: [&'static str; 2] = ["*", "/"];
 
 pub struct Parser {
     scan: Scanner
@@ -34,7 +37,9 @@ impl Parser {
     }
     // All declarations have float or int as return type, no void
     fn program(&mut self) {
+        self.handle_spaces();
         while self.scan.peek_next_token().unwrap().get_text() != "void" {
+            self.handle_spaces();
             self.declaration();
         }
         if self.scan.more_tokens_available() {
@@ -56,13 +61,34 @@ impl Parser {
         // }
     }
 
-    fn main_declaration(&self) {
-        // print void main(), give error if that is not correct
-        //block()
+    fn main_declaration(&mut self) {
+        self.handle_spaces();
+        let mut next_token = self.scan.get_next_token().unwrap();
+        if next_token.get_text() != "void" {
+            panic!("Main function missing void on line {}", next_token.get_line_number());
+        }
+        self.handle_spaces();
+        next_token = self.scan.get_next_token().unwrap();
+        if next_token.get_text() != "main" {
+            panic!("Main function missing main on line {}", next_token.get_line_number());
+        }
+        self.handle_spaces();
+        next_token = self.scan.get_next_token().unwrap();
+        if next_token.get_text() != "(" {
+            panic!("Main function missing open parenthesis on line {}", next_token.get_line_number());
+        }
+        self.handle_spaces();
+        next_token = self.scan.get_next_token().unwrap();
+        if next_token.get_text() != ")" {
+            panic!("Main function missing closing parenthesis on line {}", next_token.get_line_number());
+        }
+        self.block();
     }
 
-    fn function_definition(&self) {
-
+    fn function_definition(&mut self) {
+        self.declaration_type();
+        self.parameter_block();
+        self.block();
     }
 
     fn declaration_type(&mut self) {
@@ -70,26 +96,69 @@ impl Parser {
         self.identifier();
     }
 
-    fn variable_declaration(&self) {
-        //if next token isnt =, _=, or ; then error
-        //if not ; print (= constant;) 
+    fn variable_declaration(&mut self) {
+        self.handle_spaces();
+        let next_token = self.scan.get_next_token().unwrap();
+        if next_token.get_type().as_str() != TokenType::OPERATOR.as_str() || (next_token.get_text() != ";" && next_token.get_text() != ";") {
+            panic!("Invalid operator in variable declaration on line {}: use = if initializing or ; if declaring", next_token.get_line_number());
+        }
+
+        if next_token.get_text() == "=" {
+            self.handle_spaces();
+            self.constant();
+            self.handle_spaces();
+            let final_token = self.scan.peek_next_token().unwrap();
+            if final_token.get_type().as_str() != TokenType::OPERATOR.as_str() || final_token.get_text() != ";" {
+                panic!("Must end variable initialization with ';' on line {}", next_token.get_line_number());
+            } else {
+                self.scan.get_next_token();
+            }
+        }
     }
 
-    fn function_declaration(&self) {
-        //parameter_block()
-        //print ;
+    fn function_declaration(&mut self) {
+        self.parameter_block();
+        self.handle_spaces();
+        let next_token = self.scan.get_next_token().unwrap();
+        if next_token.get_type().as_str() != TokenType::OPERATOR.as_str() || next_token.get_text() != ";" {
+            panic!("Must end variable initialization with ';' on line {}", next_token.get_line_number());
+        }
     }
 
-    fn block(&self) {
-        //print {, error if not next token
+    fn block(&mut self) {
+        self.handle_spaces();
+        let mut bracket = self.scan.get_next_token().unwrap();
+        if bracket.get_text() != "{" {
+            panic!("Missing open bracket for code block on line {}", bracket.get_line_number());
+        }
+        self.handle_spaces();
+        while self.scan.peek_next_token().unwrap().get_text() != "}" && self.scan.more_tokens_available() {
+            // declaration, statement, and/or function definition
+        }
+        if !self.scan.more_tokens_available() {
+            panic!("Used all available tokens")
+        }
+        self.handle_spaces();
+        bracket = self.scan.get_next_token().unwrap();
+        if bracket.get_text() != "}" {
+            panic!("Missing closing bracket for code block on line {}", bracket.get_line_number());
+        }
     }
 
-    fn parameter_block(&self) {
-        //print (, if not there error
+    fn parameter_block(&mut self) {
+        self.handle_spaces();
+        let mut parenthesis = self.scan.get_next_token().unwrap();
+        if parenthesis.get_text() != "(" {
+            panic!("Missing open parenthesis for parameter block on line {}", parenthesis.get_line_number());
+        }
         // while token != ) {
             // parameter()
         //}
-        //print ), if not there error
+        self.handle_spaces();
+        parenthesis = self.scan.get_next_token().unwrap();
+        if parenthesis.get_text() != ")" {
+            panic!("Missing closing parenthesis for code block on line {}", parenthesis.get_line_number());
+        }
     }
 
     fn data_type(&mut self) {
@@ -98,7 +167,7 @@ impl Parser {
         }
     }
 
-    fn constant(&self) {
+    fn constant(&mut self) {
 
     }
 
@@ -106,8 +175,13 @@ impl Parser {
 
     }
 
-    fn parameter(&self) {
+    fn assignment(&self) {
 
+    }
+
+    fn parameter(&mut self) {
+        self.data_type();
+        self.identifier();
     }
 
     // Need to handle spaces
@@ -120,11 +194,9 @@ impl Parser {
         if next_token.get_text() == "unsigned" {
             is_integer_type = true;
             self.scan.get_next_token();
-            let possible_inttype = self.scan.peek_next_token().unwrap();
+            let possible_inttype = self.scan.get_next_token().unwrap();
             if !INT_TYPES.contains(&possible_inttype.get_text()) {
                 panic!("Invalid unsigned type on line {}", possible_inttype.get_line_number());
-            } else {
-                self.scan.get_next_token();
             }
         }
         if INT_TYPES.contains(&next_token.get_text()) {
@@ -136,48 +208,109 @@ impl Parser {
     
     //Need to handle spaces
     fn float_type(&mut self) {
-        let next_token = self.scan.peek_next_token().unwrap();
+        self.handle_spaces();
+        let next_token = self.scan.get_next_token().unwrap();
         if !FLOAT_TYPES.contains(&next_token.get_text()) {
-            panic!("Invalid float type on line {}", next_token.get_line_number());
-        } else {
-            self.scan.get_next_token();
+            panic!("Invalid float type on line {}: use float or double", next_token.get_line_number());
+        } 
+    }
+
+    // Need to handle spaces
+    fn identifier(&mut self) {
+        let next_token = self.scan.peek_next_token().unwrap();
+        if next_token.get_type().as_str() != TokenType::VARIABLE.as_str() {
+            panic!("Invalid variable on line {}", next_token.get_line_number());
+        }
+        for (i, c) in next_token.get_text().chars().enumerate() {
+            if i == 0 && !c.is_ascii_alphabetic() && c != '_' {
+                panic!("Invalid identifier on line {}: Must start with _ or alphabetic char", next_token.get_line_number());
+            }
+            if i != 0 && !c.is_ascii_alphanumeric() && c != '_' {
+                panic!("Invalid identifier on line {}: Contains invalid char", next_token.get_line_number());
+            }
+        }
+        self.scan.get_next_token();
+    }
+
+    fn while_loop(&mut self) {
+        self.scan.get_next_token(); //gets while
+        self.handle_spaces();
+        let mut parenthesis = self.scan.get_next_token().unwrap();
+        if parenthesis.get_text() != "(" {
+            panic!("Missing open parenthesis for while loop on line {}", parenthesis.get_line_number());
+        }
+        self.handle_spaces();
+        self.expression();
+        self.handle_spaces();
+        parenthesis = self.scan.get_next_token().unwrap();
+        if parenthesis.get_text() != ")" {
+            panic!("Missing closing parenthesis for while loop on line {}", parenthesis.get_line_number());
+        }
+        self.block();
+    }
+
+    fn if_statement(&mut self) {
+        self.scan.get_next_token(); //gets if
+        self.handle_spaces();
+        let mut parenthesis = self.scan.get_next_token().unwrap();
+        if parenthesis.get_text() != "(" {
+            panic!("Missing open parenthesis for if statement on line {}", parenthesis.get_line_number());
+        }
+        self.expression();
+        parenthesis = self.scan.get_next_token().unwrap();
+        if parenthesis.get_text() != ")" {
+            panic!("Missing closing parenthesis for if statement on line {}", parenthesis.get_line_number());
+        }
+        self.block();
+    }
+
+    fn return_statement(&mut self) {
+        self.scan.get_next_token(); //gets return
+        //handle spaces
+        self.expression();
+        let next_token = self.scan.get_next_token().unwrap();
+        if next_token.get_text() != ";" {
+            panic!("Missing ';' for return statement on line {}", next_token.get_line_number());
         }
     }
 
-    fn identifier(&self) {
+    //handle spaces
+    fn expression(&mut self) {
+        self.simple_expression();
         let next_token = self.scan.peek_next_token().unwrap();
+        if next_token.get_text() == ";" {
+            self.scan.get_next_token();
+        } else {
+            self.relation_operator();
+            self.simple_expression();
+        }
     }
 
-    fn assignment(&self) {
+// DIFFICULT TO IMPLEMENT
+
+    fn simple_expression(&mut self) {
+        self.term();
+        //handle spaces
+        let mut next_token = self.scan.peek_next_token().unwrap();
+        while ADD_OPS.contains(&next_token.get_text()) {
+            self.add_operator();
+        }
+    }
+
+    //handle spaces
+    fn term(&mut self) {
+        self.factor();
+    }
+
+    fn factor(&mut self) {
 
     }
 
-    fn while_loop(&self) {
-
-    }
-
-    fn if_statement(&self) {
-
-    }
-
-    fn expression(&self) {
-
-    }
-
-    fn simple_expression(&self) {
-
-    }
-
-    fn term(&self) {
-
-    }
-
-    fn factor(&self) {
-
-    }
-
-    fn relation_operator(&self) {
-
+    fn relation_operator(&mut self) {
+        let next_token = self.scan.get_next_token().unwrap();
+        if !RELATION_OPS.contains(&next_token.get_text()) {
+            panic!("Invalid relation operator on line {}", next_token.get_line_number());
+        }
     }
 
     fn add_operator(&self) {
@@ -188,7 +321,9 @@ impl Parser {
 
     }
 
-    fn handle_spaces(&self) {
-        //loop through and go through space tokens until actual token
+    fn handle_spaces(&mut self) {
+        while self.scan.peek_next_token().unwrap().get_text() == " "  || self.scan.peek_next_token().unwrap().get_text() == "\n"{
+            self.scan.get_next_token();
+        }
     }
 }
