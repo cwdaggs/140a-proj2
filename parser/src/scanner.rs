@@ -7,7 +7,6 @@ const OPERATORS: [char; 14] = ['(', ',', ')', '{', '}', '=', '<', '>', '+', '-',
 pub struct Scanner {
     stream: CharStream,
     linenum: i32,
-    charnum: i32,
     pub tokens: Vec<Token>
 }
 
@@ -16,7 +15,6 @@ impl Scanner {
         Scanner {
             stream: s,
             linenum: 0,
-            charnum: 0,
             tokens: Vec::new()
         }
     }
@@ -34,7 +32,7 @@ impl Scanner {
 
     pub fn get_next_token(&mut self) -> Option<Token> {
         if self.more_tokens_available() {
-            let next_token = Some(self.tokens[0]);
+            let next_token = self.tokens.first();
 			self.tokens.remove(0);
 			return next_token;
         }
@@ -43,15 +41,28 @@ impl Scanner {
 
     pub fn peek_next_token(&self) -> Option<Token> {
         if self.more_tokens_available() {
-            return Some(self.tokens[0]);
+            return Some(*self.tokens.first().unwrap());
         }
         None
+        // // if self.more_tokens_available() {
+        //     *self.tokens.first().unwrap()
+        // // }
     }
+
+    // Here's the plan: adapt scanner so spaces and newlines are skipped
+    // Implement this like the char stream with peek at k token, use this for assignment
+    // if k > len then error
+    // pub fn peek_next_nonspace(&self) -> Option<Token> {
+    //     for i in self.tokens.len() {
+
+    //     }
+    // }
 
     pub fn more_tokens_available(&self) -> bool {
         !self.tokens.is_empty()
     }
-
+//implement last keyword to help integer or float type
+// just dont add space tokens
     pub fn tokenize(&mut self) {
         let mut char_vec = Vec::new();
         while self.stream.more_available() {
@@ -69,16 +80,15 @@ impl Scanner {
                 if !temp_string.is_empty() {
                     self.determine_string(&temp_string);
                 }
-                self.tokens.push(Token::new(self.stream.get_next_char().unwrap().to_string(), crate::token::TokenType::NONE, self.linenum, self.charnum));
-                self.charnum += 1;
+                // self.tokens.push(Token::new(self.stream.get_next_char().unwrap().to_string(), crate::token::TokenType::NONE, self.linenum));
+                self.stream.get_next_char();
                 char_vec.clear();
             } else if self.is_newline(next_char) {
-                self.tokens.push(Token::new(self.stream.get_next_char().unwrap().to_string(), crate::token::TokenType::NONE, self.linenum, self.charnum));
+                // self.tokens.push(Token::new(self.stream.get_next_char().unwrap().to_string(), crate::token::TokenType::NONE, self.linenum));
+                self.stream.get_next_char();
                 self.linenum += 1;
-                self.charnum = 0;
             } else {
                 char_vec.push(self.stream.get_next_char().unwrap());
-                self.charnum += 1;
             }
         }
     }
@@ -121,9 +131,8 @@ impl Scanner {
         
         for _i in 0..temp_string.len() {
             self.stream.get_next_char();
-            self.charnum += 1;
         }
-        self.tokens.push(Token::new(temp_string, crate::token::TokenType::OPERATOR, self.linenum, self.charnum));
+        self.tokens.push(Token::new(temp_string, crate::token::TokenType::OPERATOR, self.linenum));
     }
 
     fn is_keyword(&self, temp_string: String) -> bool {
@@ -154,15 +163,15 @@ impl Scanner {
 
     fn determine_string(&mut self, temp_string: &String) {
         if self.is_keyword(temp_string.to_string()) {
-            self.tokens.push(Token::new(temp_string.to_string(), crate::token::TokenType::KEYWORD, self.linenum, self.charnum));
+            self.tokens.push(Token::new(temp_string.to_string(), crate::token::TokenType::KEYWORD, self.linenum));
         } else if self.is_num(temp_string.to_string()) {
             if temp_string.contains('.') {
-                self.tokens.push(Token::new(temp_string.to_string(), crate::token::TokenType::FLOATCONSTANT, self.linenum, self.charnum));
+                self.tokens.push(Token::new(temp_string.to_string(), crate::token::TokenType::FLOATCONSTANT, self.linenum));
             } else {
-                self.tokens.push(Token::new(temp_string.to_string(), crate::token::TokenType::INTCONSTANT, self.linenum, self.charnum));
+                self.tokens.push(Token::new(temp_string.to_string(), crate::token::TokenType::INTCONSTANT, self.linenum));
             }
         } else {
-            self.tokens.push(Token::new(temp_string.to_string(), crate::token::TokenType::VARIABLE, self.linenum, self.charnum));
+            self.tokens.push(Token::new(temp_string.to_string(), crate::token::TokenType::VARIABLE, self.linenum));
         }
     }
 }
