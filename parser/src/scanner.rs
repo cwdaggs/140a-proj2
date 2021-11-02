@@ -23,8 +23,10 @@ impl Scanner {
 // Previous char to keep track of - op?
 // check what type of string it is: var, num, or key
 // use the bool returned to push
+// May need to have a function here that returns vector, use a parameter for parser
 
     pub fn print_tokens(&self) {
+        println!("{}", self.tokens.len());
         for i in 0..self.tokens.len() {
             println!("{}", self.tokens[i].get_text());
         }
@@ -40,10 +42,10 @@ impl Scanner {
     }
 
     pub fn peek_next_token(&self) -> Option<Token> {
-        if self.more_tokens_available() {
-            return Some(*self.tokens.first().unwrap());
-        }
-        None
+        // if self.more_tokens_available() {
+           Some(*self.tokens.first().unwrap())
+        // }
+        // None
         // // if self.more_tokens_available() {
         //     *self.tokens.first().unwrap()
         // // }
@@ -72,19 +74,26 @@ impl Scanner {
             // if self.is_operator(next_char) || self.is_space(next_char) {
 
             // }
-            if OPERATORS.contains(&next_char) {
-                self.operator(next_char);
+            if self.is_operator(next_char) {
+                if !char_vec.is_empty() {
+                    let temp_string: String = char_vec.iter().collect();
+                    if !temp_string.trim().is_empty() {
+                        self.determine_string(&temp_string);
+                    }
+                    // self.stream.get_next_char();
+                    char_vec.clear();
+                } else {
+                    self.operator(next_char);
+                }
             // If next is space, gathers string to test
-            } else if self.is_space(next_char) {
+            } else if self.is_space_or_tab(next_char) {
                 let temp_string: String = char_vec.iter().collect();
-                if !temp_string.is_empty() {
+                if !temp_string.trim().is_empty() {
                     self.determine_string(&temp_string);
                 }
-                // self.tokens.push(Token::new(self.stream.get_next_char().unwrap().to_string(), crate::token::TokenType::NONE, self.linenum));
                 self.stream.get_next_char();
                 char_vec.clear();
             } else if self.is_newline(next_char) {
-                // self.tokens.push(Token::new(self.stream.get_next_char().unwrap().to_string(), crate::token::TokenType::NONE, self.linenum));
                 self.stream.get_next_char();
                 self.linenum += 1;
             } else {
@@ -105,25 +114,25 @@ impl Scanner {
             '{' => temp_string = "{".to_string(),
             '}' => temp_string = "}".to_string(),
             ';' => temp_string = ";".to_string(),
-            '=' => if self.stream.peek_next_char() == Some('=') {
+            '=' => if self.stream.peek_ahead_char(1) == Some('=') {
                 temp_string = "==".to_string()
             } else {
                 temp_string = "=".to_string()
             },
-            '!' => if self.stream.peek_next_char() == Some('=') {
+            '!' => if self.stream.peek_ahead_char(1) == Some('=') {
                 temp_string = "!=".to_string()
             },
-            '<' => if self.stream.peek_next_char() == Some('=') {
+            '<' => if self.stream.peek_ahead_char(1) == Some('=') {
                 temp_string = "<=".to_string()
             } else {
                 temp_string = "<".to_string()
             },  
-            '>' => if self.stream.peek_next_char() == Some('=') {
+            '>' => if self.stream.peek_ahead_char(1) == Some('=') {
                 temp_string = ">=".to_string()
             } else {
                 temp_string = ">".to_string()
             },
-            '-' => if self.stream.peek_next_char().unwrap().is_digit(10) { // this aint even right
+            '-' => if self.stream.peek_ahead_char(1).unwrap().is_digit(10) { // this aint even right
                 temp_string = "-".to_string()
             },
             _ => {}    
@@ -153,8 +162,8 @@ impl Scanner {
         true
     }
 
-    fn is_space(&self, next_char: char) -> bool {
-        next_char == ' '
+    fn is_space_or_tab(&self, next_char: char) -> bool {
+        next_char == ' ' || next_char == '\t'
     }
 
     fn is_newline(&self, next_char: char) -> bool {

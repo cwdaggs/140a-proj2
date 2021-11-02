@@ -22,7 +22,7 @@ fn main() {
 		panic!("Not enough arguments");
 	}
 	let filename = &args[1];
-	println!("{}", filename);
+	// println!("{}", filename);
 	if !filename.ends_with(".x") {
 		panic!("Invalid file type");
 	}
@@ -31,6 +31,6 @@ fn main() {
 	let mut scanner = Scanner::new(char_stream);
 	scanner.tokenize();
 	scanner.print_tokens();
-	let mut parser = Parser::new(scanner);
+	// let mut parser = Parser::new(scanner);
 
 }
