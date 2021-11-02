@@ -31,6 +31,7 @@ fn main() {
 	let mut scanner = Scanner::new(char_stream);
 	scanner.tokenize();
 	scanner.print_tokens();
-	// let mut parser = Parser::new(scanner);
+	let mut parser = Parser::new(scanner);
+	parser.parse();
 
 }

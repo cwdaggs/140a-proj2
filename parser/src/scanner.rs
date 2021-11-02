@@ -7,7 +7,7 @@ const OPERATORS: [char; 14] = ['(', ',', ')', '{', '}', '=', '<', '>', '+', '-',
 pub struct Scanner {
     stream: CharStream,
     linenum: i32,
-    pub tokens: Vec<Token>
+    tokens: Vec<Token>
 }
 
 impl Scanner {
@@ -33,17 +33,18 @@ impl Scanner {
     }
 
     pub fn get_next_token(&mut self) -> Option<Token> {
-        if self.more_tokens_available() {
-            let next_token = Some(self.tokens[0]);
+        // if self.more_tokens_available() {
+            // let tok = self.tokens.iter().nth(0);
+            let tok = self.tokens[0].clone();
 			self.tokens.remove(0);
-			return next_token;
-        }
-        None
+			// tok
+            Some(tok)
+        // }
     }
 
     pub fn peek_next_token(&self) -> Option<Token> {
         // if self.more_tokens_available() {
-           Some(*self.tokens.first().unwrap())
+            Some(self.tokens[0].clone())
         // }
         // None
         // // if self.more_tokens_available() {

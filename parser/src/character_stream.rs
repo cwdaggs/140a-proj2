@@ -1,8 +1,4 @@
 use std::fs;
-// use std::io;
-// use std::convert::TryFrom;
-// use std::io::prelude::*;
-
 
 pub struct CharStream {
 	text: Vec<char>
@@ -25,10 +21,7 @@ impl CharStream {
 	// Returns the next character without consuming it.
 	// Returns None if no more characters are available. 
 	pub fn peek_next_char(&self) -> Option<char> {
-		// if self.more_available() {
-			Some(self.text[0])
-		// } 
-		// None
+		Some(self.text[0])
 	}
 
 	// Returns the kth character ahead in the stream without consuming it.
@@ -36,21 +29,15 @@ impl CharStream {
 	// Returns None if no more characters are available at the position.
 	// The input k cannot be negative.
 	pub fn peek_ahead_char(&self, k: u32) -> Option<char> {
-		// if self.more_available() {
-			Some(self.text[k as usize])
-		// } 
-		// None
+		Some(self.text[k as usize])
 	}
 
 	// Returns the next character and consumes it.
 	// Returns None if no more characters are available.
 	pub fn get_next_char(&mut self) -> Option<char> {
-		// if self.more_available() {
-			let next_char = Some(self.text[0]);
-			self.text.remove(0);
-			next_char
-		// } 
-		// None
+		let next_char = Some(self.text[0]);
+		self.text.remove(0);
+		next_char
 	}
 }
 

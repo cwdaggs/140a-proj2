@@ -31,7 +31,7 @@ impl Parser {
     pub fn parse(&mut self) {
         //call tokenize from scanner here
         self.scan.tokenize();
-        if !self.scan.tokens.is_empty() {
+        if !self.scan.more_tokens_available() {
             self.program();
         }
     }
@@ -141,7 +141,7 @@ impl Parser {
             self.parameter();
         }
         while self.scan.peek_next_token().unwrap().get_text() == "," {
-            self.scan.get_next_token();
+            self.scan.get_next_token().unwrap();
             self.parameter();
         }
         parenthesis = self.scan.get_next_token().unwrap();
@@ -163,7 +163,7 @@ impl Parser {
         } else if !self.int_constant() && !self.float_constant() {
             panic!("Invalid constant on line {}", next_token.get_text());
         }
-        self.scan.get_next_token();
+        self.scan.get_next_token().unwrap();
     }
 
     fn int_constant(&mut self) -> bool {
@@ -245,14 +245,14 @@ impl Parser {
         }
         if next_token.get_text() == "unsigned" {
             is_integer_type = true;
-            self.scan.get_next_token();
+            self.scan.get_next_token().unwrap();
             let possible_inttype = self.scan.get_next_token().unwrap();
             if !INT_TYPES.contains(&possible_inttype.get_text()) {
                 panic!("Invalid unsigned type on line {}", possible_inttype.get_line_number());
             }
         }
         if INT_TYPES.contains(&next_token.get_text()) {
-            self.scan.get_next_token();
+            self.scan.get_next_token().unwrap();
             is_integer_type = true;
         }
         is_integer_type
@@ -281,7 +281,7 @@ impl Parser {
     }
 
     fn while_loop(&mut self) {
-        self.scan.get_next_token(); //gets while, may not need if got in statement
+        self.scan.get_next_token().unwrap(); //gets while, may not need if got in statement
         let mut parenthesis = self.scan.get_next_token().unwrap();
         if parenthesis.get_text() != "(" {
             panic!("Missing open parenthesis for while loop on line {}", parenthesis.get_line_number());
@@ -295,7 +295,7 @@ impl Parser {
     }
 
     fn if_statement(&mut self) {
-        self.scan.get_next_token(); //gets if
+        self.scan.get_next_token().unwrap(); //gets if
         let mut parenthesis = self.scan.get_next_token().unwrap();
         if parenthesis.get_text() != "(" {
             panic!("Missing open parenthesis for if statement on line {}", parenthesis.get_line_number());
@@ -309,7 +309,7 @@ impl Parser {
     }
 
     fn return_statement(&mut self) {
-        self.scan.get_next_token(); //gets return
+        self.scan.get_next_token().unwrap(); //gets return
         self.expression();
         let next_token = self.scan.get_next_token().unwrap();
         if next_token.get_text() != ";" {
@@ -325,7 +325,7 @@ impl Parser {
             self.simple_expression();
         }
         // } else {
-        //     self.scan.get_next_token();
+        //     self.scan.get_next_token().unwrap();
         // }
     }
 
@@ -387,7 +387,7 @@ impl Parser {
 
     // fn handle_spaces(&mut self) {
     //     while self.scan.peek_next_token().unwrap().get_text() == " "  || self.scan.peek_next_token().unwrap().get_text() == "\n"{
-    //         self.scan.get_next_token();
+    //         self.scan.get_next_token().unwrap();
     //     }
     // }
 }
