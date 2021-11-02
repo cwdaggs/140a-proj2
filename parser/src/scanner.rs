@@ -34,7 +34,7 @@ impl Scanner {
 
     pub fn get_next_token(&mut self) -> Option<Token> {
         if self.more_tokens_available() {
-            let next_token = self.tokens.first();
+            let next_token = Some(self.tokens[0]);
 			self.tokens.remove(0);
 			return next_token;
         }

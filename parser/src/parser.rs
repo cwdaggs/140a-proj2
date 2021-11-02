@@ -203,7 +203,7 @@ impl Parser {
 
     // UNFINISHED
     fn statement(&mut self) {
-        let mut next_token = self.scan.get_next_token().unwrap();
+        let mut next_token = self.scan.peek_next_token().unwrap();
         if next_token.get_text() == "while" {
             self.while_loop();
         } else if next_token.get_text() == "return" {
@@ -211,7 +211,7 @@ impl Parser {
         } else if next_token.get_text() == "if" {
             self.if_statement();
         } else {
-            // assignment or expression
+            // assignment (peek 2 ahead to see if =) or expression
         }
     }
 

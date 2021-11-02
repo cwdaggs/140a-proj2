@@ -1,3 +1,4 @@
+// #[derive(Clone, Copy)]
 pub enum TokenType {
     NONE,
 	INTCONSTANT,
@@ -24,7 +25,7 @@ impl TokenType {
     }   
 }
 
-
+// #[derive(Clone, Copy)]
 pub struct Token {
     text: String,
     token_type: TokenType,
