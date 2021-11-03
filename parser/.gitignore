@@ -1,2 +1,3 @@
 *.json
 .rustc_info.json
+*.xhtml

@@ -1,5 +1,8 @@
+use crate::Token;
 use crate::Scanner;
 use crate::token::TokenType;
+use std::fs::File;
+use std::io::Write;
 
 const INT_TYPES: [&'static str; 4] = ["char", "short", "int", "long"];
 const FLOAT_TYPES:  [&'static str; 2] = ["float", "double"]; 
@@ -8,7 +11,8 @@ const ADD_OPS: [&'static str; 2] = ["+", "-"];
 const MULT_OPS: [&'static str; 2] = ["*", "/"];
 
 pub struct Parser {
-    scan: Scanner
+    scan: Scanner,
+    token_clone: Vec<Token>
 }
 
 //Add a coloring and formatting file for xhtml
@@ -18,15 +22,93 @@ pub struct Parser {
 impl Parser {
     pub fn new(s: Scanner) -> Parser {
         Parser {
-            scan: s
+            scan: s,
+            token_clone: Vec::new()
+        }
+    }
+
+    pub fn write_to_xhtml(&self) {
+        let mut file = File::create("example.xhtml").expect("Failed to create file");
+        file.write_all("<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1
+        -transitional.dtd\">\n".as_bytes()).expect("write failed");
+        file.write_all("<html xmlns=\"http://www.w3.org/1999/xhtml\" xml:lang=\"en\">\n".as_bytes()).expect("write failed");
+        file.write_all("<head>\n<title>\nX Formatted file</title>\n</head>\n<body bgcolor=\"navy\" text=\"yellow\" link=\"yellow\" vlink=\"yellow\">".as_bytes()).expect("write failed");
+        file.write_all("<font face=\"Courier New\">\n".as_bytes()).expect("write failed");
+        let mut tab_count = 0;
+        let mut prev_newline = false;
+        for i in 0..self.scan.tokens_length() {
+            let token_text = self.token_clone[i as usize].get_text();
+            let token_type = self.token_clone[i as usize].get_type().as_str();
+            let mut next_token_text = "";
+            if prev_newline {
+                if token_text == "}" {
+                    tab_count -= 1;
+                }
+                for _j in 0..(tab_count*4) {
+                    file.write_all("&nbsp;".as_bytes()).expect("write failed");
+                }
+                prev_newline = false;
+            }
+            if (i + 1) < self.scan.tokens_length() {
+                next_token_text = self.token_clone[(i+1) as usize].get_text();
+            }
+            if token_text == "{" || token_text == "}" || token_text == ";" {
+                if token_text == "{" {
+                    tab_count += 1;
+                }
+                
+                let buf = format!("<font color=\"white\"><b>{}</b></font><br />\n", token_text);
+                file.write_all(buf.as_bytes()).expect("write failed");
+                prev_newline = true;
+            } else if token_text == "(" || token_text == ")" {
+                let buf = format!("<font color=\"white\"><b>{}</b></font>", token_text);
+                file.write_all(buf.as_bytes()).expect("write failed");
+            } else if next_token_text == "}" || next_token_text == "(" || next_token_text == ")" || next_token_text == ";" {
+                let color: &str;
+                if token_type == TokenType::FLOATCONSTANT.as_str() || token_type == TokenType::INTCONSTANT.as_str() {
+                    color = "aqua";
+                } else if token_type == TokenType::FUNCTION.as_str() {
+                    color = "orange";
+                } else if token_type == TokenType::VARIABLE.as_str() {
+                    color = "yellow";
+                } else {
+                    color = "white";
+                }
+                let buf = format!("<font color=\"{}\"><b>{}</b></font>", color, token_text);
+                file.write_all(buf.as_bytes()).expect("write failed");
+            } else {
+                let color: &str;
+                if token_type == TokenType::FLOATCONSTANT.as_str() || token_type == TokenType::INTCONSTANT.as_str() {
+                    color = "aqua";
+                } else if token_type == TokenType::FUNCTION.as_str() {
+                    color = "orange";
+                } else if token_type == TokenType::VARIABLE.as_str() {
+                    color = "yellow";
+                } else {
+                    color = "white";
+                }
+                
+                let buf = format!("<font color=\"{}\"><b>{}</b></font> ", color, token_text);
+                file.write_all(buf.as_bytes()).expect("write failed");
+            }
+        }
+        file.write_all("</font>\n</body>\n</html>\n".as_bytes()).expect("write failed");
+    }
+
+    fn initialize_clone(&mut self) {
+        let length = self.scan.tokens_length();
+        for i in 0..length {
+            self.token_clone.push(self.scan.peek_ahead_token(i).unwrap());
         }
     }
 
     pub fn parse(&mut self) {
         self.scan.tokenize();
-        if self.scan.more_tokens_available() {
-            self.program();
-        }
+        self.initialize_clone();
+        // if self.scan.more_tokens_available() {
+        //     self.program();
+        // }
+        self.write_to_xhtml();
     }
 
     fn program(&mut self) {
@@ -271,7 +353,10 @@ impl Parser {
         if next_token.get_type().as_str() != TokenType::VARIABLE.as_str() {
             panic!("Invalid variable on line {}", next_token.get_line_number());
         }
-        //if is func then change tokentype in vector copy with same id to func instead of var
+        if is_func {
+            let next_token_id = next_token.get_id() as usize;
+            *self.token_clone[next_token_id].get_type_mut() = TokenType::FUNCTION;
+        }
         for (i, c) in next_token.get_text().chars().enumerate() {
             if i == 0 && !c.is_ascii_alphabetic() && c != '_' {
                 panic!("Invalid identifier on line {}: Must start with _ or alphabetic char", next_token.get_line_number());

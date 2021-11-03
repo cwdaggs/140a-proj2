@@ -1,26 +1,22 @@
 #[derive(Clone, Copy)]
 pub enum TokenType {
-    NONE,
 	INTCONSTANT,
 	FLOATCONSTANT,
     OPERATOR,
     KEYWORD,
     VARIABLE,
-	FUNCTION,
-    INVALID
+	FUNCTION
 }
 
 impl TokenType {
     pub fn as_str(&self) -> &'static str {
         match &self {
-            TokenType::NONE => "None",
             TokenType::INTCONSTANT => "IntConstant",
             TokenType::FLOATCONSTANT => "FloatConstant",
             TokenType::OPERATOR => "Operator",
             TokenType::KEYWORD => "Keyword",
             TokenType::VARIABLE => "Variable",
-            TokenType::FUNCTION => "Function",
-            TokenType::INVALID => "Invalid"
+            TokenType::FUNCTION => "Function"
         }   
     }   
 }

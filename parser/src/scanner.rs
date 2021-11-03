@@ -27,11 +27,19 @@ impl Scanner {
 // use the bool returned to push
 // May need to have a function here that returns vector, use a parameter for parser
 
-    pub fn print_tokens(&self) {
-        println!("{}", self.tokens.len());
-        for i in 0..self.tokens.len() {
-            println!("{} {} Line:{} ID:{}", self.tokens[i].get_text(), self.tokens[i].get_type().as_str(), self.tokens[i].get_line_number(), self.tokens[i].get_id());
-        }
+    // pub fn print_tokens(&self) {
+    //     println!("{}", self.tokens.len());
+    //     for i in 0..self.tokens.len() {
+    //         println!("{} {} Line:{} ID:{}", self.tokens[i].get_text(), self.tokens[i].get_type().as_str(), self.tokens[i].get_line_number(), self.tokens[i].get_id());
+    //     }
+    // }
+
+    // pub fn create_tokens_clone(&self) -> Vec<Token> {
+    //     self.tokens.clone()
+    // }
+
+    pub fn tokens_length(&self) -> u32 {
+        self.tokens.len() as u32
     }
 
     pub fn get_next_token(&mut self) -> Option<Token> {

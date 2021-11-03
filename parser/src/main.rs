@@ -27,11 +27,11 @@ fn main() {
 		panic!("Invalid file type");
 	}
 	
-	let char_stream = CharStream::new(filename);
-	let mut scanner = Scanner::new(char_stream);
+	// let char_stream = CharStream::new(filename);
+	// let mut scanner = Scanner::new(char_stream);
 	// scanner.tokenize();
 	// scanner.print_tokens();
-	let mut parser = Parser::new(scanner);
+	let mut parser = Parser::new(Scanner::new(CharStream::new(filename)));
 	parser.parse();
 
 }
