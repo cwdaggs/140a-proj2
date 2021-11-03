@@ -33,23 +33,17 @@ impl Scanner {
     }
 
     pub fn get_next_token(&mut self) -> Option<Token> {
-        // if self.more_tokens_available() {
-            // let tok = self.tokens.iter().nth(0);
-            let tok = self.tokens[0].clone();
-			self.tokens.remove(0);
-			// tok
-            Some(tok)
-        // }
+        let next_token = self.tokens[0].clone();
+        self.tokens.remove(0);
+        Some(next_token)
     }
 
     pub fn peek_next_token(&self) -> Option<Token> {
-        // if self.more_tokens_available() {
-            Some(self.tokens[0].clone())
-        // }
-        // None
-        // // if self.more_tokens_available() {
-        //     *self.tokens.first().unwrap()
-        // // }
+        Some(self.tokens[0].clone())
+    }
+
+    pub fn peek_ahead_token(&self, k: u32) -> Option<Token> {
+        Some(self.tokens[k as usize].clone())
     }
 
     // Here's the plan: adapt scanner so spaces and newlines are skipped

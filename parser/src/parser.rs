@@ -1,4 +1,3 @@
-use crate::Token;
 use crate::Scanner;
 use crate::token::TokenType;
 
@@ -15,10 +14,6 @@ pub struct Parser {
 //Add a coloring and formatting file for xhtml
 // Real question, how to handle spaces?
 //Maintain list of variables/functions?
-
-//{} for repetition
-//[] for optional
-// () for grouping
 
 impl Parser {
     // has a while loop calling get next token or whatever from scanner
@@ -51,7 +46,7 @@ impl Parser {
 
     fn declaration(&mut self) {
         self.declaration_type();
-        let mut next_token = self.scan.peek_next_token().unwrap();
+        let next_token = self.scan.peek_next_token().unwrap();
         if next_token.get_text() == "(" {
             self.function_declaration();
         } else {
@@ -157,7 +152,7 @@ impl Parser {
     }
 
     fn constant(&mut self) {
-        let mut next_token = self.scan.peek_next_token().unwrap();
+        let next_token = self.scan.peek_next_token().unwrap();
         if next_token.get_type().as_str() != TokenType::FLOATCONSTANT.as_str() && next_token.get_type().as_str() != TokenType::INTCONSTANT.as_str() {
             panic!("Invalid type of constant on line {}", next_token.get_line_number());
         } else if !self.int_constant() && !self.float_constant() {
@@ -167,7 +162,7 @@ impl Parser {
     }
 
     fn int_constant(&mut self) -> bool {
-        let mut constant_string = self.scan.peek_next_token().unwrap().get_text().to_string();
+        let constant_string = self.scan.peek_next_token().unwrap().get_text().to_string();
         let first_char = constant_string.chars().nth(0).unwrap();
         if first_char != '-' && !first_char.is_digit(10) {
             return false;
@@ -181,7 +176,7 @@ impl Parser {
     }
 
     fn float_constant(&mut self) -> bool {
-        let mut constant_string = self.scan.peek_next_token().unwrap().get_text().to_string();
+        let constant_string = self.scan.peek_next_token().unwrap().get_text().to_string();
         let first_char = constant_string.chars().nth(0).unwrap();
         if first_char != '-' && !first_char.is_digit(10) {
             panic!("Invalid constant on line {}", constant_string);
@@ -201,7 +196,6 @@ impl Parser {
         true
     }
 
-    // UNFINISHED
     fn statement(&mut self) {
         let mut next_token = self.scan.peek_next_token().unwrap();
         if next_token.get_text() == "while" {
@@ -210,12 +204,17 @@ impl Parser {
             self.return_statement();
         } else if next_token.get_text() == "if" {
             self.if_statement();
+        } else if self.scan.peek_ahead_token(1).unwrap().get_text() == "=" {
+            self.assignment();
         } else {
-            // assignment (peek 2 ahead to see if =) or expression
+            self.expression();
+            next_token = self.scan.get_next_token().unwrap();
+            if next_token.get_text() != ";" {
+                panic!("Missing ; after expression on line {}", next_token.get_line_number());
+            }
         }
     }
 
-    // UNFINISHED
     fn assignment(&mut self) {
         self.identifier();
         let mut next_token = self.scan.get_next_token().unwrap();
@@ -224,8 +223,12 @@ impl Parser {
         }
         // How to check if more than one identifier? 
         // keep peeking two tokens ahead, if its = then call identifier and get the =
+        while self.scan.peek_ahead_token(1).unwrap().get_text() == "=" {
+            self.identifier();
+            self.scan.get_next_token();
+        }
         self.expression();
-       
+        next_token = self.scan.get_next_token().unwrap();
         if next_token.get_text() != ";" {
             panic!("Missing ';' for assignment on line {}", next_token.get_line_number());
         }
@@ -236,7 +239,6 @@ impl Parser {
         self.identifier();
     }
 
-    // Need to handle spaces
     fn integer_type(&mut self) -> bool {
         let mut is_integer_type = false;
         let next_token = self.scan.peek_next_token().unwrap();
@@ -329,12 +331,10 @@ impl Parser {
         // }
     }
 
-// DIFFICULT TO IMPLEMENT
-
     fn simple_expression(&mut self) {
         self.term();
-        let mut next_token = self.scan.peek_next_token().unwrap();
-        while ADD_OPS.contains(&next_token.get_text()) {
+        // let mut next_token = self.scan.peek_next_token().unwrap();
+        while ADD_OPS.contains(&self.scan.peek_next_token().unwrap().get_text()) {
             self.add_operator();
             self.term();
         }
@@ -342,8 +342,8 @@ impl Parser {
 
     fn term(&mut self) {
         self.factor();
-        let mut next_token = self.scan.peek_next_token().unwrap();
-        while MULT_OPS.contains(&next_token.get_text()) {
+        // let mut next_token = self.scan.peek_next_token().unwrap();
+        while MULT_OPS.contains(&self.scan.peek_next_token().unwrap().get_text()) {
             self.mult_operator();
             self.factor();
         }
@@ -351,17 +351,25 @@ impl Parser {
 
     // UNFINISHED
     fn factor(&mut self) {
-        //peek next
-        //if (
-            // expression
-        // else if type is constant
-            // constant
-        // else
-            // identifier
-            // if next is (
-                // while peek next != ) {
-                    //expression
-                // }
+        let next_token = self.scan.peek_next_token().unwrap();
+        if next_token.get_text() == "(" {
+            self.scan.get_next_token();
+            self.expression();
+            if self.scan.peek_next_token().unwrap().get_text() != ")" {
+                panic!("Invalid factor on line {}", self.scan.peek_next_token().unwrap().get_line_number());
+            }
+        } else if next_token.get_type().as_str() == TokenType::FLOATCONSTANT.as_str() || next_token.get_type().as_str() == TokenType::INTCONSTANT.as_str() {
+            self.constant();
+        } else {
+            self.identifier();
+            if self.scan.peek_next_token().unwrap().get_text() == "(" {
+                self.scan.get_next_token();
+                // This is not gonna work entirely
+                while self.scan.peek_next_token().unwrap().get_text() != ")" {
+                    self.expression();
+                }
+            }
+        }
     }
 
     fn relation_operator(&mut self) {
@@ -384,10 +392,4 @@ impl Parser {
             panic!("Invalid multiplication operator on line {}", next_token.get_line_number());
         }
     }
-
-    // fn handle_spaces(&mut self) {
-    //     while self.scan.peek_next_token().unwrap().get_text() == " "  || self.scan.peek_next_token().unwrap().get_text() == "\n"{
-    //         self.scan.get_next_token().unwrap();
-    //     }
-    // }
 }
