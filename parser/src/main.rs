@@ -29,8 +29,8 @@ fn main() {
 	
 	let char_stream = CharStream::new(filename);
 	let mut scanner = Scanner::new(char_stream);
-	scanner.tokenize();
-	scanner.print_tokens();
+	// scanner.tokenize();
+	// scanner.print_tokens();
 	let mut parser = Parser::new(scanner);
 	parser.parse();
 

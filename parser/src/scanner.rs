@@ -7,15 +7,17 @@ const OPERATORS: [char; 14] = ['(', ',', ')', '{', '}', '=', '<', '>', '+', '-',
 pub struct Scanner {
     stream: CharStream,
     linenum: i32,
-    tokens: Vec<Token>
+    tokens: Vec<Token>,
+    id_count: i32
 }
 
 impl Scanner {
     pub fn new(s: CharStream) -> Scanner {
         Scanner {
             stream: s,
-            linenum: 0,
-            tokens: Vec::new()
+            linenum: 1,
+            tokens: Vec::new(),
+            id_count: 0
         }
     }
 
@@ -28,7 +30,7 @@ impl Scanner {
     pub fn print_tokens(&self) {
         println!("{}", self.tokens.len());
         for i in 0..self.tokens.len() {
-            println!("{}", self.tokens[i].get_text());
+            println!("{} {} Line:{} ID:{}", self.tokens[i].get_text(), self.tokens[i].get_type().as_str(), self.tokens[i].get_line_number(), self.tokens[i].get_id());
         }
     }
 
@@ -46,29 +48,20 @@ impl Scanner {
         Some(self.tokens[k as usize].clone())
     }
 
-    // Here's the plan: adapt scanner so spaces and newlines are skipped
     // Implement this like the char stream with peek at k token, use this for assignment
     // if k > len then error
-    // pub fn peek_next_nonspace(&self) -> Option<Token> {
-    //     for i in self.tokens.len() {
-
-    //     }
-    // }
+ 
 
     pub fn more_tokens_available(&self) -> bool {
         !self.tokens.is_empty()
     }
 //implement last keyword to help integer or float type
-// just dont add space tokens
+
     pub fn tokenize(&mut self) {
         let mut char_vec = Vec::new();
         while self.stream.more_available() {
             let next_char = self.stream.peek_next_char().unwrap();
 
-            // Handles 1/2 length ops, will move stream ahead inside function
-            // if self.is_operator(next_char) || self.is_space(next_char) {
-
-            // }
             if self.is_operator(next_char) {
                 if !char_vec.is_empty() {
                     let temp_string: String = char_vec.iter().collect();
@@ -136,7 +129,8 @@ impl Scanner {
         for _i in 0..temp_string.len() {
             self.stream.get_next_char();
         }
-        self.tokens.push(Token::new(temp_string, crate::token::TokenType::OPERATOR, self.linenum));
+        self.tokens.push(Token::new(temp_string, crate::token::TokenType::OPERATOR, self.linenum, self.id_count));
+        self.id_count += 1;
     }
 
     fn is_keyword(&self, temp_string: String) -> bool {
@@ -167,15 +161,16 @@ impl Scanner {
 
     fn determine_string(&mut self, temp_string: &String) {
         if self.is_keyword(temp_string.to_string()) {
-            self.tokens.push(Token::new(temp_string.to_string(), crate::token::TokenType::KEYWORD, self.linenum));
+            self.tokens.push(Token::new(temp_string.to_string(), crate::token::TokenType::KEYWORD, self.linenum, self.id_count));
         } else if self.is_num(temp_string.to_string()) {
             if temp_string.contains('.') {
-                self.tokens.push(Token::new(temp_string.to_string(), crate::token::TokenType::FLOATCONSTANT, self.linenum));
+                self.tokens.push(Token::new(temp_string.to_string(), crate::token::TokenType::FLOATCONSTANT, self.linenum, self.id_count));
             } else {
-                self.tokens.push(Token::new(temp_string.to_string(), crate::token::TokenType::INTCONSTANT, self.linenum));
+                self.tokens.push(Token::new(temp_string.to_string(), crate::token::TokenType::INTCONSTANT, self.linenum, self.id_count));
             }
         } else {
-            self.tokens.push(Token::new(temp_string.to_string(), crate::token::TokenType::VARIABLE, self.linenum));
+            self.tokens.push(Token::new(temp_string.to_string(), crate::token::TokenType::VARIABLE, self.linenum, self.id_count));
         }
+        self.id_count += 1;
     }
 }
