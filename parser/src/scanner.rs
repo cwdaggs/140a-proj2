@@ -2,7 +2,7 @@ use crate::CharStream;
 use crate::Token;
 
 const KEYWORDS: [&'static str; 12] = ["unsigned", "char", "short", "int", "long", "float", "double", "while", "if", "return", "void", "main"];
-const OPERATORS: [char; 14] = ['(', ',', ')', '{', '}', '=', '<', '>', '+', '-', '*', '/', ';', '!']; //also ==, !=, <=, >=
+const OPERATORS: [char; 14] = ['(', ',', ')', '{', '}', '=', '<', '>', '+', '-', '*', '/', ';', '!']; 
 
 pub struct Scanner {
     stream: CharStream,
@@ -34,10 +34,6 @@ impl Scanner {
     //     }
     // }
 
-    // pub fn create_tokens_clone(&self) -> Vec<Token> {
-    //     self.tokens.clone()
-    // }
-
     pub fn tokens_length(&self) -> u32 {
         self.tokens.len() as u32
     }
@@ -56,10 +52,6 @@ impl Scanner {
         Some(self.tokens[k as usize].clone())
     }
 
-    // Implement this like the char stream with peek at k token, use this for assignment
-    // if k > len then error
- 
-
     pub fn more_tokens_available(&self) -> bool {
         !self.tokens.is_empty()
     }
@@ -67,8 +59,10 @@ impl Scanner {
 
     pub fn tokenize(&mut self) {
         let mut char_vec = Vec::new();
+        let mut prev_char = Vec::new();
         while self.stream.more_available() {
             let next_char = self.stream.peek_next_char().unwrap();
+            
 
             if self.is_operator(next_char) {
                 if !char_vec.is_empty() {
@@ -93,7 +87,9 @@ impl Scanner {
                 self.stream.get_next_char();
                 self.linenum += 1;
             } else {
-                char_vec.push(self.stream.get_next_char().unwrap());
+                char_vec.push(self.stream.peek_next_char().unwrap());
+                prev_char.push(self.stream.peek_next_char().unwrap());
+                self.stream.get_next_char();
             }
         }
     }
@@ -117,6 +113,8 @@ impl Scanner {
             },
             '!' => if self.stream.peek_ahead_char(1) == Some('=') {
                 temp_string = "!=".to_string()
+            } else {
+                temp_string = "!".to_string()
             },
             '<' => if self.stream.peek_ahead_char(1) == Some('=') {
                 temp_string = "<=".to_string()

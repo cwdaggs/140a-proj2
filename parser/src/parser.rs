@@ -12,23 +12,43 @@ const MULT_OPS: [&'static str; 2] = ["*", "/"];
 
 pub struct Parser {
     scan: Scanner,
-    token_clone: Vec<Token>
+    token_clone: Vec<Token>,
+    filename: String
 }
 
-//Add a coloring and formatting file for xhtml
-// Real question, how to handle spaces?
-//Maintain list of variables/functions?
-
 impl Parser {
-    pub fn new(s: Scanner) -> Parser {
+    pub fn new(s: Scanner, f: &str) -> Parser {
         Parser {
             scan: s,
-            token_clone: Vec::new()
+            token_clone: Vec::new(),
+            filename: f.to_string()
         }
     }
 
-    pub fn write_to_xhtml(&self) {
-        let mut file = File::create("example.xhtml").expect("Failed to create file");
+    fn alter_filename(&self) -> String {
+        let mut new_filename = self.filename.clone();
+        new_filename.pop();
+        new_filename.pop();
+        format!("{}.xhtml", new_filename)
+    }
+
+    fn match_color(&self, token_type: &str) -> &str{
+        let color: &str;
+        match token_type {
+            "FloatConstant" | "IntConstant" => color = "aqua",
+            "Function" => color = "orange",
+            "Variable" => color = "yellow",
+            _ => color = "white"
+        }
+        color
+    } 
+
+    fn bold_style(&self, token_type: &str) -> bool {
+        token_type != TokenType::FUNCTION.as_str() && token_type != TokenType::VARIABLE.as_str()
+    }
+
+    fn write_to_xhtml(&self) {
+        let mut file = File::create(self.alter_filename()).expect("Failed to create file");
         file.write_all("<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1
         -transitional.dtd\">\n".as_bytes()).expect("write failed");
         file.write_all("<html xmlns=\"http://www.w3.org/1999/xhtml\" xml:lang=\"en\">\n".as_bytes()).expect("write failed");
@@ -36,7 +56,7 @@ impl Parser {
         file.write_all("<font face=\"Courier New\">\n".as_bytes()).expect("write failed");
         let mut tab_count = 0;
         let mut prev_newline = false;
-        for i in 0..self.scan.tokens_length() {
+        for i in 0..self.token_clone.len() {
             let token_text = self.token_clone[i as usize].get_text();
             let token_type = self.token_clone[i as usize].get_type().as_str();
             let mut next_token_text = "";
@@ -44,12 +64,12 @@ impl Parser {
                 if token_text == "}" {
                     tab_count -= 1;
                 }
-                for _j in 0..(tab_count*4) {
+                for _j in 0..(tab_count * 4) {
                     file.write_all("&nbsp;".as_bytes()).expect("write failed");
                 }
                 prev_newline = false;
             }
-            if (i + 1) < self.scan.tokens_length() {
+            if (i + 1) < self.token_clone.len() {
                 next_token_text = self.token_clone[(i+1) as usize].get_text();
             }
             if token_text == "{" || token_text == "}" || token_text == ";" {
@@ -64,32 +84,23 @@ impl Parser {
                 let buf = format!("<font color=\"white\"><b>{}</b></font>", token_text);
                 file.write_all(buf.as_bytes()).expect("write failed");
             } else if next_token_text == "}" || next_token_text == "(" || next_token_text == ")" || next_token_text == ";" {
-                let color: &str;
-                if token_type == TokenType::FLOATCONSTANT.as_str() || token_type == TokenType::INTCONSTANT.as_str() {
-                    color = "aqua";
-                } else if token_type == TokenType::FUNCTION.as_str() {
-                    color = "orange";
-                } else if token_type == TokenType::VARIABLE.as_str() {
-                    color = "yellow";
+                if self.bold_style(token_type) {
+                    let buf = format!("<font color=\"{}\"><b>{}</b></font>", self.match_color(token_type), token_text);
+                    file.write_all(buf.as_bytes()).expect("write failed");
                 } else {
-                    color = "white";
-                }
-                let buf = format!("<font color=\"{}\"><b>{}</b></font>", color, token_text);
-                file.write_all(buf.as_bytes()).expect("write failed");
-            } else {
-                let color: &str;
-                if token_type == TokenType::FLOATCONSTANT.as_str() || token_type == TokenType::INTCONSTANT.as_str() {
-                    color = "aqua";
-                } else if token_type == TokenType::FUNCTION.as_str() {
-                    color = "orange";
-                } else if token_type == TokenType::VARIABLE.as_str() {
-                    color = "yellow";
-                } else {
-                    color = "white";
+                    let buf = format!("<font color=\"{}\">{}</font>", self.match_color(token_type), token_text);
+                    file.write_all(buf.as_bytes()).expect("write failed");
                 }
                 
-                let buf = format!("<font color=\"{}\"><b>{}</b></font> ", color, token_text);
-                file.write_all(buf.as_bytes()).expect("write failed");
+            } else {
+                if self.bold_style(token_type) {
+                    let buf = format!("<font color=\"{}\"><b>{}</b></font> ", self.match_color(token_type), token_text);
+                    file.write_all(buf.as_bytes()).expect("write failed");
+                } else {
+                    let buf = format!("<font color=\"{}\">{}</font> ", self.match_color(token_type), token_text);
+                    file.write_all(buf.as_bytes()).expect("write failed");
+                }
+                
             }
         }
         file.write_all("</font>\n</body>\n</html>\n".as_bytes()).expect("write failed");
@@ -105,9 +116,9 @@ impl Parser {
     pub fn parse(&mut self) {
         self.scan.tokenize();
         self.initialize_clone();
-        // if self.scan.more_tokens_available() {
-        //     self.program();
-        // }
+        if self.scan.more_tokens_available() {
+            self.program();
+        }
         self.write_to_xhtml();
     }
 
@@ -440,14 +451,17 @@ impl Parser {
         } else if next_token.get_type().as_str() == TokenType::FLOATCONSTANT.as_str() || next_token.get_type().as_str() == TokenType::INTCONSTANT.as_str() {
             self.constant();
         } else {
-            self.identifier(false);
-            if self.scan.peek_next_token().unwrap().get_text() == "(" {
+            
+            if self.scan.peek_ahead_token(1).unwrap().get_text() == "(" {
+                self.identifier(true);
                 self.scan.get_next_token();
                 // This is not gonna work entirely
                 while self.scan.peek_next_token().unwrap().get_text() != ")" {
                     self.expression();
                 }
                 self.scan.get_next_token();
+            } else {
+                self.identifier(false);
             }
         }
     }
