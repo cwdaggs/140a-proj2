@@ -2,7 +2,7 @@ use crate::CharStream;
 use crate::Token;
 
 const KEYWORDS: [&'static str; 12] = ["unsigned", "char", "short", "int", "long", "float", "double", "while", "if", "return", "void", "main"];
-const OPERATORS: [char; 14] = ['(', ',', ')', '{', '}', '=', '<', '>', '+', '-', '*', '/', ';', '!']; 
+const OPERATORS: [char; 13] = ['(', ',', ')', '{', '}', '=', '<', '>', '+', '*', '/', ';', '!']; 
 
 pub struct Scanner {
     stream: CharStream,
@@ -27,12 +27,12 @@ impl Scanner {
 // use the bool returned to push
 // May need to have a function here that returns vector, use a parameter for parser
 
-    // pub fn print_tokens(&self) {
-    //     println!("{}", self.tokens.len());
-    //     for i in 0..self.tokens.len() {
-    //         println!("{} {} Line:{} ID:{}", self.tokens[i].get_text(), self.tokens[i].get_type().as_str(), self.tokens[i].get_line_number(), self.tokens[i].get_id());
-    //     }
-    // }
+    pub fn print_tokens(&self) {
+        println!("{}", self.tokens.len());
+        for i in 0..self.tokens.len() {
+            println!("{} {} Line:{} ID:{}", self.tokens[i].get_text(), self.tokens[i].get_type().as_str(), self.tokens[i].get_line_number(), self.tokens[i].get_id());
+        }
+    }
 
     pub fn tokens_length(&self) -> u32 {
         self.tokens.len() as u32
@@ -59,12 +59,20 @@ impl Scanner {
 
     pub fn tokenize(&mut self) {
         let mut char_vec = Vec::new();
-        let mut prev_char = Vec::new();
+        let mut prev_char = Vec::<char>::new();
         while self.stream.more_available() {
             let next_char = self.stream.peek_next_char().unwrap();
-            
 
-            if self.is_operator(next_char) {
+            if next_char == '-' && !prev_char.is_empty() {
+                self.stream.get_next_char();
+                if prev_char[prev_char.len() - 1].is_ascii_alphanumeric() || prev_char[prev_char.len() - 1] == '_' {
+                    self.tokens.push(Token::new(next_char.to_string(), crate::token::TokenType::OPERATOR, self.linenum, self.id_count));
+                    self.id_count += 1;
+                    prev_char.push(next_char);
+                } else {
+                    char_vec.push(next_char);
+                }
+            } else if self.is_operator(next_char) {
                 if !char_vec.is_empty() {
                     let temp_string: String = char_vec.iter().collect();
                     if !temp_string.trim().is_empty() {
@@ -87,9 +95,11 @@ impl Scanner {
                 self.stream.get_next_char();
                 self.linenum += 1;
             } else {
-                char_vec.push(self.stream.peek_next_char().unwrap());
-                prev_char.push(self.stream.peek_next_char().unwrap());
-                self.stream.get_next_char();
+                char_vec.push(next_char);
+                prev_char.push(next_char);
+                if next_char != '-' {
+                    self.stream.get_next_char();
+                }
             }
         }
     }
@@ -126,9 +136,9 @@ impl Scanner {
             } else {
                 temp_string = ">".to_string()
             },
-            '-' => if self.stream.peek_ahead_char(1).unwrap().is_digit(10) { // this aint even right
-                temp_string = "-".to_string()
-            },
+            // '-' => if self.stream.peek_ahead_char(1).unwrap().is_digit(10) { // this aint even right
+            //     temp_string = "-".to_string()
+            // },
             _ => {}    
         }
         
@@ -149,8 +159,8 @@ impl Scanner {
     }
 
     fn is_num(&self, temp_string: String) -> bool {
-        for c in temp_string.chars() {
-            if !c.is_digit(10) && c != '.' {
+        for (i, c) in temp_string.chars().enumerate() {
+            if (i == 0 && c != '-' && !c.is_digit(10)) || (i != 0 && !c.is_digit(10) && c != '.') {
                 return false;
             }
         }

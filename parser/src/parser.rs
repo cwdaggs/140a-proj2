@@ -251,19 +251,15 @@ impl Parser {
         if next_token.get_type().as_str() != TokenType::FLOATCONSTANT.as_str() && next_token.get_type().as_str() != TokenType::INTCONSTANT.as_str() {
             panic!("Invalid type of constant on line {}", next_token.get_line_number());
         } else if !self.int_constant() && !self.float_constant() {
-            panic!("Invalid constant on line {}", next_token.get_text());
+            panic!("Invalid constant {} on line {}", next_token.get_text(), next_token.get_line_number());
         }
         self.scan.get_next_token();
     }
 
     fn int_constant(&mut self) -> bool {
         let constant_string = self.scan.peek_next_token().unwrap().get_text().to_string();
-        let first_char = constant_string.chars().nth(0).unwrap();
-        if first_char != '-' && !first_char.is_digit(10) {
-            return false;
-        }
-        for c in constant_string.chars() {
-            if !c.is_digit(10) {
+        for (i, c) in constant_string.chars().enumerate() {
+            if (i == 0 && c != '-' && !c.is_digit(10)) || (i != 0 && !c.is_digit(10)) {
                 return false;
             }
         }
@@ -272,18 +268,14 @@ impl Parser {
 
     fn float_constant(&mut self) -> bool {
         let constant_string = self.scan.peek_next_token().unwrap().get_text().to_string();
-        let first_char = constant_string.chars().nth(0).unwrap();
-        if first_char != '-' && !first_char.is_digit(10) {
-            panic!("Invalid constant on line {}", self.scan.peek_next_token().unwrap().get_line_number());
-        }
         let mut period_count = 0;
-        for c in constant_string.chars() {
+        for (i, c) in constant_string.chars().enumerate() {
             if c == '.' {
                 period_count = period_count + 1;
                 if period_count > 1 {
                     return false;
                 }
-            } else if !c.is_digit(10) {
+            } else if  (i == 0 && c != '-' && !c.is_digit(10)) || (i != 0 && !c.is_digit(10)) {
                 return false;
             }
         }
