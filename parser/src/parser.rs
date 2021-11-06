@@ -371,7 +371,7 @@ impl Parser {
     }
 
     fn while_loop(&mut self) {
-        self.scan.get_next_token().unwrap(); //gets while, may not need if got in statement
+        self.scan.get_next_token().unwrap(); 
         let mut parenthesis = self.scan.get_next_token().unwrap();
         if parenthesis.get_text() != "(" {
             panic!("Missing open parenthesis for while loop on line {}", parenthesis.get_line_number());
@@ -385,7 +385,7 @@ impl Parser {
     }
 
     fn if_statement(&mut self) {
-        self.scan.get_next_token().unwrap(); //gets if
+        self.scan.get_next_token().unwrap(); 
         let mut parenthesis = self.scan.get_next_token().unwrap();
         if parenthesis.get_text() != "(" {
             panic!("Missing open parenthesis for if statement on line {}", parenthesis.get_line_number());
@@ -399,7 +399,7 @@ impl Parser {
     }
 
     fn return_statement(&mut self) {
-        self.scan.get_next_token().unwrap(); //gets return
+        self.scan.get_next_token().unwrap(); 
         self.expression();
         let next_token = self.scan.get_next_token().unwrap();
         if next_token.get_text() != ";" {
@@ -447,7 +447,6 @@ impl Parser {
             if self.scan.peek_ahead_token(1).unwrap().get_text() == "(" {
                 self.identifier(true);
                 self.scan.get_next_token();
-                // This is not gonna work entirely
                 while self.scan.peek_next_token().unwrap().get_text() != ")" {
                     self.expression();
                 }

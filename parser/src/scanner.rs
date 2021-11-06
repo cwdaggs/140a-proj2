@@ -21,18 +21,12 @@ impl Scanner {
         }
     }
 
-//Operator highest precedence (check first)
-// Previous char to keep track of - op?
-// check what type of string it is: var, num, or key
-// use the bool returned to push
-// May need to have a function here that returns vector, use a parameter for parser
-
-    pub fn print_tokens(&self) {
-        println!("{}", self.tokens.len());
-        for i in 0..self.tokens.len() {
-            println!("{} {} Line:{} ID:{}", self.tokens[i].get_text(), self.tokens[i].get_type().as_str(), self.tokens[i].get_line_number(), self.tokens[i].get_id());
-        }
-    }
+    // pub fn print_tokens(&self) {
+    //     println!("{}", self.tokens.len());
+    //     for i in 0..self.tokens.len() {
+    //         println!("{} {} Line:{} ID:{}", self.tokens[i].get_text(), self.tokens[i].get_type().as_str(), self.tokens[i].get_line_number(), self.tokens[i].get_id());
+    //     }
+    // }
 
     pub fn tokens_length(&self) -> u32 {
         self.tokens.len() as u32
@@ -55,7 +49,6 @@ impl Scanner {
     pub fn more_tokens_available(&self) -> bool {
         !self.tokens.is_empty()
     }
-//implement last keyword to help integer or float type
 
     pub fn tokenize(&mut self) {
         let mut char_vec = Vec::new();
@@ -78,7 +71,6 @@ impl Scanner {
                     if !temp_string.trim().is_empty() {
                         self.determine_string(&temp_string);
                     }
-                    // self.stream.get_next_char();
                     char_vec.clear();
                 } else {
                     self.operator(next_char);
@@ -136,9 +128,6 @@ impl Scanner {
             } else {
                 temp_string = ">".to_string()
             },
-            // '-' => if self.stream.peek_ahead_char(1).unwrap().is_digit(10) { // this aint even right
-            //     temp_string = "-".to_string()
-            // },
             _ => {}    
         }
         

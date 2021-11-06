@@ -11,7 +11,7 @@ float Foo(int val){
 
     while(val > 0){
         TestFloat = TestFloat * TestFloat;
-        val = val - -1;   
+        val = val - 1;   
     }
     return TestFloat;
 }
