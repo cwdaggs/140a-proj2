@@ -1,5 +1,6 @@
 use crate::CharStream;
 use crate::Token;
+use crate::token::TokenType;
 
 const KEYWORDS: [&'static str; 12] = ["unsigned", "char", "short", "int", "long", "float", "double", "while", "if", "return", "void", "main"];
 const OPERATORS: [char; 13] = ['(', ',', ')', '{', '}', '=', '<', '>', '+', '*', '/', ';', '!']; 
@@ -48,12 +49,13 @@ impl Scanner {
     pub fn tokenize(&mut self) {
         let mut char_vec = Vec::new();
         let mut prev_char = Vec::<char>::new();
+        let mut prev_token_type = Vec::<TokenType>::new();
         while self.stream.more_available() {
             let next_char = self.stream.peek_next_char().unwrap();
 
             if next_char == '-' && !prev_char.is_empty() {
                 self.stream.get_next_char();
-                if prev_char[prev_char.len() - 1].is_ascii_alphanumeric() || prev_char[prev_char.len() - 1] == '_' {
+                if (prev_char[prev_char.len() - 1].is_ascii_alphanumeric() || prev_char[prev_char.len() - 1] == '_') && prev_token_type[prev_token_type.len()-1].as_str() != TokenType::KEYWORD.as_str() {
                     self.tokens.push(Token::new(next_char.to_string(), crate::token::TokenType::OPERATOR, self.linenum, self.id_count));
                     self.id_count += 1;
                     prev_char.push(next_char);
@@ -64,7 +66,7 @@ impl Scanner {
                 if !char_vec.is_empty() {
                     let temp_string: String = char_vec.iter().collect();
                     if !temp_string.trim().is_empty() {
-                        self.determine_string(&temp_string);
+                        self.determine_string(&temp_string, &mut prev_token_type);
                     }
                     char_vec.clear();
                 } else {
@@ -74,7 +76,7 @@ impl Scanner {
             } else if self.is_space_or_tab(next_char) {
                 let temp_string: String = char_vec.iter().collect();
                 if !temp_string.trim().is_empty() {
-                    self.determine_string(&temp_string);
+                    self.determine_string(&temp_string, &mut prev_token_type);
                 }
                 self.stream.get_next_char();
                 char_vec.clear();
@@ -160,17 +162,21 @@ impl Scanner {
         next_char == '\n'
     }
 
-    fn determine_string(&mut self, temp_string: &String) {
+    fn determine_string(&mut self, temp_string: &String, prev_token_type: &mut Vec<TokenType>) {
         if self.is_keyword(temp_string.to_string()) {
             self.tokens.push(Token::new(temp_string.to_string(), crate::token::TokenType::KEYWORD, self.linenum, self.id_count));
+            prev_token_type.push(TokenType::KEYWORD);
         } else if self.is_num(temp_string.to_string()) {
             if temp_string.contains('.') {
                 self.tokens.push(Token::new(temp_string.to_string(), crate::token::TokenType::FLOATCONSTANT, self.linenum, self.id_count));
+                prev_token_type.push(TokenType::FLOATCONSTANT);
             } else {
                 self.tokens.push(Token::new(temp_string.to_string(), crate::token::TokenType::INTCONSTANT, self.linenum, self.id_count));
+                prev_token_type.push(TokenType::INTCONSTANT);
             }
         } else {
             self.tokens.push(Token::new(temp_string.to_string(), crate::token::TokenType::VARIABLE, self.linenum, self.id_count));
+            prev_token_type.push(TokenType::VARIABLE);
         }
         self.id_count += 1;
     }

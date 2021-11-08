@@ -9,7 +9,7 @@
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceRoot}/parser/target/debug/parser",
-            "args": ["/mnt/c/Users/wmanu/ECS140A/proj2/parser/test_cases/test7.x"],
+            "args": ["/mnt/c/Users/wmanu/ECS140A/proj2/parser/test6.x"],
             "stopAtEntry": false,
             "cwd": "${fileDirname}",
             "environment": [],

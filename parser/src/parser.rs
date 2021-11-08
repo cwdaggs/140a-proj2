@@ -62,6 +62,10 @@ impl Parser {
                 token_text = "&gt;";
             } else if token_text == "<" {
                 token_text = "&lt;";
+            } else if token_text == ">=" {
+                token_text = "&gt;=";
+            } else if token_text == "<=" {
+                token_text = "&lt;=";
             }
             let token_type = self.token_clone[i as usize].get_type().as_str();
             let mut next_token_text = "";
@@ -209,8 +213,9 @@ impl Parser {
         if bracket.get_text() != "{" {
             panic!("Missing open bracket for code block on line {}", bracket.get_line_number());
         }
-        while FLOAT_TYPES.contains(&self.scan.peek_next_token().unwrap().get_text()) || INT_TYPES.contains(&self.scan.peek_next_token().unwrap().get_text()) ||
-        self.scan.peek_next_token().unwrap().get_text() == "unsigned" {
+        // let next_token_text = self.scan.peek_next_token().unwrap().get_text();
+        while (FLOAT_TYPES.contains(&self.scan.peek_next_token().unwrap().get_text()) || INT_TYPES.contains(&self.scan.peek_next_token().unwrap().get_text()) ||
+        self.scan.peek_next_token().unwrap().get_text() == "unsigned") && self.scan.peek_ahead_token(1).unwrap().get_text() != "(" {
             self.declaration();
         } 
         while !FLOAT_TYPES.contains(&self.scan.peek_next_token().unwrap().get_text()) && !INT_TYPES.contains(&self.scan.peek_next_token().unwrap().get_text()) &&
@@ -444,8 +449,9 @@ impl Parser {
         if next_token.get_text() == "(" {
             self.scan.get_next_token();
             self.expression();
-            if self.scan.peek_next_token().unwrap().get_text() != ")" {
-                panic!("Invalid factor on line {}", self.scan.peek_next_token().unwrap().get_line_number());
+            let final_parenthesis = self.scan.get_next_token().unwrap();
+            if final_parenthesis.get_text() != ")" {
+                panic!("Invalid factor on line {}", final_parenthesis.get_line_number());
             }
         } else if next_token.get_type().as_str() == TokenType::FLOATCONSTANT.as_str() || next_token.get_type().as_str() == TokenType::INTCONSTANT.as_str() {
             self.constant();
