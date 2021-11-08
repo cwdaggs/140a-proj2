@@ -57,7 +57,12 @@ impl Parser {
         let mut tab_count = 0;
         let mut prev_newline = false;
         for i in 0..self.token_clone.len() {
-            let token_text = self.token_clone[i as usize].get_text();
+            let mut token_text = self.token_clone[i as usize].get_text();
+            if token_text == ">" {
+                token_text = "&gt;";
+            } else if token_text == "<" {
+                token_text = "&lt;";
+            }
             let token_type = self.token_clone[i as usize].get_type().as_str();
             let mut next_token_text = "";
             if prev_newline {
@@ -128,7 +133,9 @@ impl Parser {
         }
         if self.scan.more_tokens_available() {
             self.main_declaration();
-        } 
+        } else {
+            panic!("No main declaration");
+        }
         while self.scan.more_tokens_available() {
             self.function_definition();
         }
@@ -136,7 +143,7 @@ impl Parser {
 
     fn declaration(&mut self) {
         let next_token = self.scan.peek_ahead_token(2).unwrap();
-        if next_token.get_text() == "(" {
+        if next_token.get_text() == "(" || (self.scan.peek_next_token().unwrap().get_text() == "unsigned" && self.scan.peek_ahead_token(3).unwrap().get_text() == "("){
             self.declaration_type(true);
             self.function_declaration();
         } else {
@@ -450,6 +457,8 @@ impl Parser {
                 while self.scan.peek_next_token().unwrap().get_text() != ")" {
                     self.expression();
                 }
+                self.scan.get_next_token();
+            } else if next_token.get_text() == "," {
                 self.scan.get_next_token();
             } else {
                 self.identifier(false);

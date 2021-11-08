@@ -17,16 +17,14 @@ fn main() {
 	if args.len() < 2 {
 		panic!("Not enough arguments");
 	}
+	if args.len() > 2 {
+		panic!("Too many arguments");
+	}
 	let filename = &args[1];
 	if !filename.ends_with(".x") {
-		panic!("Invalid file type");
+		panic!("Invalid file type: use a file with the suffix .x");
 	}
-	
-	// let char_stream = CharStream::new(filename);
-	// let mut scanner = Scanner::new(char_stream);
-	// scanner.tokenize();
-	// scanner.print_tokens();
+
 	let mut parser = Parser::new(Scanner::new(CharStream::new(filename)), filename);
 	parser.parse();
-
 }

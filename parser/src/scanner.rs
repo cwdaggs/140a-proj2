@@ -21,13 +21,8 @@ impl Scanner {
         }
     }
 
-    // pub fn print_tokens(&self) {
-    //     println!("{}", self.tokens.len());
-    //     for i in 0..self.tokens.len() {
-    //         println!("{} {} Line:{} ID:{}", self.tokens[i].get_text(), self.tokens[i].get_type().as_str(), self.tokens[i].get_line_number(), self.tokens[i].get_id());
-    //     }
-    // }
-
+    /* These 5 functions are all used in the parser to access the given scanner
+    and vector of tokens */
     pub fn tokens_length(&self) -> u32 {
         self.tokens.len() as u32
     }
@@ -73,7 +68,7 @@ impl Scanner {
                     }
                     char_vec.clear();
                 } else {
-                    self.operator(next_char);
+                    self.operator(next_char, &mut prev_char);
                 }
             // If next is space, gathers string to test
             } else if self.is_space_or_tab(next_char) {
@@ -96,7 +91,7 @@ impl Scanner {
         }
     }
 
-    fn operator(&mut self, next_char: char) {
+    fn operator(&mut self, next_char: char, prev_chars: &mut Vec<char>) {
         let mut temp_string: String = "".to_string();
         match next_char {
             '+' => temp_string = "+".to_string(),
@@ -136,6 +131,7 @@ impl Scanner {
         }
         self.tokens.push(Token::new(temp_string, crate::token::TokenType::OPERATOR, self.linenum, self.id_count));
         self.id_count += 1;
+        prev_chars.push(next_char);
     }
 
     fn is_keyword(&self, temp_string: String) -> bool {
